@@ -1,0 +1,58 @@
+p.langer_block {
+    word-break: normal;
+    width: 45em;
+    margin: 0em auto;
+}
+
+p.kurzer_block {
+    word-break: normal;
+    width: 27em;
+    margin: 0em auto;
+}
+
+ul {
+    list-style-type: square;
+    display: table;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 14pt;
+    font-weight: bol;
+    color: indigo;
+}
+
+h1.extra {
+    font-size: 16pt;
+    font-weight: bold;
+    color: rgb(6, 27, 54)
+}
+
+h2 {
+    font-size: 36pt;
+    font-weight: bolder;
+    color: dodgerblue;
+}
+
+h4.extra {
+    font-size: 28pt;
+    font-weight: bold;
+    color: rgb(59, 9, 9)
+}
+
+h4.header {
+    font-size: 46pt;
+    font-weight: bolder;
+    color: saddlebrown;
+}
+
+a:link {
+    color: #000080;
+    text-decoration: underline
+}
+
+a:visited {
+    color: #800000;
+    text-decoration: underline
+}
