@@ -83,6 +83,7 @@ currentArtikelList = []
 ShoppingList = []
 currentCatalogName = ''
 lastCatalogName = ''
+importCatalogList = []
 currentShoppingListName = ''
 currentListIndex = 0
 TotalPrice = 0.0
@@ -92,14 +93,13 @@ isCategoryView = False
 
 
 class ShoppingListSettings:
-    catfilename = ''
     zetfilename = ''
     iscatview = False
     pHeadline = 'Einkaufszettel'
-    pdate = False
+    pdate = True
     pfilename = False
     ptempfilename = ''
-    pdelete = False
+    pdelete = True
     mfrom = ''
     mto = ''
     mserver = ''
@@ -107,10 +107,10 @@ class ShoppingListSettings:
     mSSL = False
     musername = ''
     mpassword = 'gAAAAABfqWrlhBqcvpnO0sUrZCq8Y5ObBMDdGE88UaVZiWP694PKxWkKLp7MoFnGrgU_wmjW3X1d8caa5vzRKlkbDJ30c7PmNQ=='
-    mmessage = ''
-    mmessagedate = False
+    mmessage = 'Ihr neuer Einkaufszettel'
+    mmessagedate = True
     msendfilename = ''
-    mdate = False
+    mdate = True
 
 ###################################################################################
 #       PyQt5 - QStyle - Cell Alignment                                           #
@@ -548,34 +548,29 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
     def Combobox_Set(self):
         global currentCatalogName
         global KatalogFileList
-        global lastCatalogName
-
+        global importCatalogList
         self.comboBox.blockSignals(True)
         self.comboBox.clear()
-
         if platform.system() == 'Linux':
             home_dir = Path(str(Path.cwd())+'/catalogs')
         elif platform.system() == 'Windows':
             home_dir = Path(str(Path.home() / 'Documents\ezExpress\catalogs'))
-
         KatalogFileList = []
-
         if currentCatalogName == '':
             self.comboBox.addItem('< Bitte auswählen >', currentCatalogName)
-            # KatalogFileList.append(currentCatalogName)
         else:
             self.comboBox.addItem(Path(currentCatalogName).stem, currentCatalogName)
             KatalogFileList.append(currentCatalogName)
-
         for currentfile in home_dir.iterdir():
             if currentfile.suffix == '.epk':
                 if (str(currentfile) != currentCatalogName) and (str(currentfile) not in KatalogFileList):
                     self.comboBox.addItem(currentfile.stem, str(currentfile))
                     KatalogFileList.append(str(currentfile))
 
-        if (lastCatalogName != '') and (lastCatalogName != currentCatalogName) and (lastCatalogName not in KatalogFileList):
-            self.comboBox.addItem(Path(lastCatalogName).stem, lastCatalogName)
-            KatalogFileList.append(lastCatalogName)
+        for currentfile in importCatalogList:
+            if currentfile not in KatalogFileList:
+                self.comboBox.addItem(currentfile.stem, str(currentfile))
+                KatalogFileList.append(str(currentfile))
 
         self.comboBox.setCurrentIndex(0)
         self.comboBox.blockSignals(False)
@@ -586,13 +581,8 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
         global changeOccurred
         global currentCatalogName
         global KatalogFileList
-        global lastCatalogName
         nummer = self.comboBox.currentIndex()
         if nummer > 0:
-
-            if (currentCatalogName != '') and (lastCatalogName not in KatalogFileList):
-                lastCatalogName = currentCatalogName
-
             currentCatalogName = KatalogFileList[nummer]
             dateiname = str(KatalogFileList[nummer])
             Products = load_file(dateiname)
@@ -1026,7 +1016,6 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
         global Products
         global ShoppingList
         global currentShoppingListName
-        global currentCatalogName
         global changeOccurred
         global isCategoryView
         if platform.system() == 'Linux':
@@ -1041,14 +1030,11 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
             if isname.exists():
                 savedata = load_file(fname)
                 ShoppingList = savedata[0]
-                Products = savedata[1]
-                #isCategoryView = savedata[2]
-
-                if savedata[2]:
+                isCategoryView = savedata[1]
+                if isCategoryView:
                     self.setCheckCatView()
                 else:
                     self.setCheckListView()
-
                 self.catview_show()
                 self.artview_showliste()
                 self.Einkaufszettel_show()
@@ -1060,7 +1046,6 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
         global Products
         global ShoppingList
         global currentShoppingListName
-        global currentCatalogName
         global changeOccurred
         global isCategoryView
 
@@ -1076,7 +1061,7 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
             if dummy.suffix != '.ekz':
                 fname += '.ekz'
             isname = Path(fname)
-            savedata = [ShoppingList, Products, isCategoryView]
+            savedata = [ShoppingList, isCategoryView]
             save_file(fname, savedata)
             currentShoppingListName = fname
             changeOccurred = False
@@ -1093,7 +1078,7 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
             iszettelname = Path(currentShoppingListName)
             if iszettelname.exists() and changeOccurred:
                 fname = currentShoppingListName
-                savedata = [ShoppingList, Products, isCategoryView]
+                savedata = [ShoppingList, isCategoryView]
                 save_file(fname, savedata)
                 changeOccurred = False
             elif changeOccurred and not iszettelname.exists():
@@ -1105,6 +1090,7 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
         global Products
         global CategoryList
         global currentCatalogName
+        global importCatalogList
         global changeOccurred
         if platform.system() == 'Linux':
             dir = str(Path.cwd())+'/catalogs'
@@ -1117,9 +1103,11 @@ class Ui_Einkaufszettel(QtWidgets.QMainWindow):
         if fname:
             isname = Path(fname)
             if isname.exists():
+                currentCatalogName = str(isname)
+                if currentCatalogName not in importCatalogList:
+                    importCatalogList.append(currentCatalogName)
                 Products = load_file(fname)
                 CategoryList = Products.get_list()
-                currentCatalogName = str(isname)
                 changeOccurred = True
                 self.catview_refresh()
                 self.artview_showliste()
@@ -1836,6 +1824,8 @@ class Ui_ChangeCat(QtWidgets.QWidget):
         global CategoryList
         global currentCatalogName
         global catchangeOccurred
+        global KatalogFileList
+        global importCatalogList
 
         if platform.system() == 'Linux':
             home_dir = str(Path.cwd())+'/catalogs'
@@ -1844,13 +1834,15 @@ class Ui_ChangeCat(QtWidgets.QWidget):
 
         fname = QtWidgets.QFileDialog.getOpenFileName(
             self, 'Produktkatalog öffnen...', home_dir, 'Produktkatalog (*.epk)', 'Produktkatalog (*.epk)')
-        fname = fname[0]
+        fname = str(fname[0])
         if fname:
             isname = Path(fname)
             if isname.exists():
                 Katalog = load_file(fname)
                 CategoryList = Katalog.get_list()
                 currentCatalogName = fname
+                if (fname not in KatalogFileList) and (fname not in importCatalogList):
+                    importCatalogList.append(fname)
                 self.catview_refresh()
                 self.artview_refresh()
                 catchangeOccurred = True
@@ -1860,13 +1852,15 @@ class Ui_ChangeCat(QtWidgets.QWidget):
         global CategoryList
         global currentCatalogName
         global catchangeOccurred
+        global KatalogFileList
+        global importCatalogList
 
         if platform.system() == 'Linux':
             current_dir = str(Path.cwd())+'/catalogs'
         elif platform.system() == 'Windows':
             current_dir = str(Path.home() / 'Documents\ezExpress\catalogs')
         filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Produktkatalog speichern...', current_dir, 'Produktkatalog (*.epk)', 'Produktkatalog (*.epk)')
-        fname = filename[0]
+        fname = str(filename[0])
         if fname:
             dummy = Path(fname)
             if dummy.suffix != '.epk':
@@ -1874,6 +1868,8 @@ class Ui_ChangeCat(QtWidgets.QWidget):
             save_file(fname, Katalog)
             CategoryList = Katalog.get_list()
             currentCatalogName = fname
+            if (fname not in KatalogFileList) and (fname not in importCatalogList):
+                importCatalogList.append(fname)
             self.catview_refresh()
             catchangeOccurred = False
 
@@ -1902,6 +1898,8 @@ class Ui_ChangeCat(QtWidgets.QWidget):
         global Katalog
         global catchangeOccurred
         global changeOccurred
+        global currentCatalogName
+        global lastCatalogName
         if catchangeOccurred:
             reply = QtWidgets.QMessageBox.question(self, 'Änderungen vorgenommen!', 'Möchten Sie den Produktkatalog speichern, verwerfen oder abbrechen?',
                                                    QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Save)
@@ -1909,13 +1907,15 @@ class Ui_ChangeCat(QtWidgets.QWidget):
                 changeOccurred = True
                 self.savesamefile()
                 Products = deepcopy(Katalog)
-                #Katalog = []
                 Einkaufszettel_show()
                 event.accept()
+
             elif reply == QtWidgets.QMessageBox.Discard:
                 Katalog = deepcopy(Products)
+                currentCatalogName = lastCatalogName
                 Einkaufszettel_show()
                 event.accept()
+
             elif reply == QtWidgets.QMessageBox.Cancel:
                 event.ignore()
         else:
@@ -2081,7 +2081,7 @@ class Ui_SetEinstellungen(object):
         self.label_9.setText(_translate("SetEinstellungen", "Benutzername :"))
         self.label_10.setText(_translate("SetEinstellungen", "Passwort :"))
         self.Button_Save.setText(_translate("SetEinstellungen", "Speichern"))
-        self.Button_Back.setText(_translate("SetEinstellungen", "Zurück"))
+        self.Button_Back.setText(_translate("SetEinstellungen", "Fertig"))
 
 ############################## Methods/Functions ########################
 
@@ -2329,7 +2329,6 @@ class Ui_PreislistenWebScraper(object):
 
     def delete_Katalogs(self):
         global currentCatalogName
-        global lastCatalogName
         global Products
         global CategoryList
         reply = QtWidgets.QMessageBox.question(PreislistenWebScraper, 'Kataloge löschen?', 'Sind Sie sicher?', QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
@@ -2362,7 +2361,6 @@ class Ui_PreislistenWebScraper(object):
                     Path(str(Path.home() / 'Documents\ezExpress\catalogs')+'\\'+'EDEKA.epk').unlink()
             if not Path(currentCatalogName).exists():
                 currentCatalogName = ''
-                lastCatalogName = ''
                 Products = []
                 CategoryList = []
             self.set_none()
@@ -2995,6 +2993,8 @@ def show_ChangeCat():
     global Katalog
     global Products
     global currentCatalogName
+    global lastCatalogName
+    lastCatalogName = currentCatalogName
     Katalog = deepcopy(Products)
     ui2.catview_refresh()
     ui2.artview_refresh()
@@ -3064,7 +3064,6 @@ def load_settings():
     test = Path(filename)
     if test.exists():
         Einstellungen = load_file(filename)
-        currentCatalogName = Einstellungen.catfilename
         currentShoppingListName = Einstellungen.zetfilename
         isCategoryView = Einstellungen.iscatview
         return True
@@ -3078,7 +3077,6 @@ def save_settings():
     global isCategoryView
     global Einstellungen
 
-    Einstellungen.catfilename = currentCatalogName
     Einstellungen.zetfilename = currentShoppingListName
     Einstellungen.iscatview = isCategoryView
 
@@ -3195,13 +3193,6 @@ if __name__ == '__main__':
                 isCategoryView = False
                 ShoppingList = []
                 currentShoppingListName = ''
-
-        if currentCatalogName != '':
-            iscatname = Path(currentCatalogName)
-            if iscatname.exists():
-                Products = load_file(currentCatalogName)
-            else:
-                currentCatalogName = ''
 
     if Products == []:
         Products = TreeNode(0, 'Produkte')
